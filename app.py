@@ -181,9 +181,13 @@ def build_gauge(value: int) -> go.Figure:
 
 @st.cache_data
 def build_gantt(data: tuple) -> go.Figure:
-    """Gráfica Gantt cacheada. Recibe tuple para que sea hashable."""
+    """Gráfica Gantt cacheada.
+    Recibe tuple de tuples (hashable). Cada fila es:
+    (("fase","X"),("inicio",0),("completado",50),("planificado",60))
+    """
+    rows = [dict(row) for row in data]   # convierte tuples → dicts
     fig = go.Figure()
-    for d in reversed(data):
+    for d in reversed(rows):
         fig.add_trace(go.Bar(
             y=[d["fase"]], x=[d["planificado"] - d["inicio"]], base=d["inicio"],
             orientation="h",
@@ -313,12 +317,10 @@ cg, ci, ca = st.columns([2, 1.5, 1.5], gap="small")
 with cg:
     st.markdown('<div class="sec-card">', unsafe_allow_html=True)
     st.markdown('<div class="sec-title">Track de Implementaciones Activas</div>', unsafe_allow_html=True)
-    # Convertir a tuple de frozensets para que sea hashable por @st.cache_data
-    impl_tuple = tuple(frozenset(d.items()) for d in IMPLEMENTACIONES)
-    # Re-convertir a lista de dicts para la función
-    impl_list = [dict(d) for d in impl_tuple]
+    # Convertir lista de dicts → tuple de tuples (hashable para @st.cache_data)
+    gantt_data = tuple(tuple(sorted(d.items())) for d in IMPLEMENTACIONES)
     st.plotly_chart(
-        build_gantt(tuple(tuple(sorted(d.items())) for d in IMPLEMENTACIONES)),
+        build_gantt(gantt_data),
         use_container_width=True,
         config={"displayModeBar": False},
     )
