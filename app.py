@@ -35,42 +35,55 @@ st.set_page_config(
 
 
 # ═══════════════════════════════════════════════════════════════
+#  RUTAS — compatibles con Streamlit Cloud y local
+#  En Streamlit Cloud, el working directory ES la raíz del repo,
+#  así que usamos Path(__file__).parent para ser siempre exactos.
+# ═══════════════════════════════════════════════════════════════
+from pathlib import Path
+BASE_DIR = Path(__file__).parent   # directorio donde está app.py
+
+
+# ═══════════════════════════════════════════════════════════════
 #  CARGAR CSS (separado de app.py)
 # ═══════════════════════════════════════════════════════════════
 @st.cache_data
 def load_css(path: str) -> str:
-    with open(path, encoding="utf-8") as f:
-        return f.read()
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""   # Si falta el CSS no crashea, solo carga sin estilos
 
-css_path = os.path.join(os.path.dirname(__file__), "assets", "styles.css")
+css_path = str(BASE_DIR / "assets" / "styles.css")
 st.markdown(f"<style>{load_css(css_path)}</style>", unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════════
 #  CARGAR LOGO (cacheado, con fallback SVG)
 # ═══════════════════════════════════════════════════════════════
+_SVG_LOGO = """<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4"  y="4"  width="16" height="42" rx="3" fill="#2AB5A3"/>
+  <rect x="4"  y="38" width="40" height="16" rx="3" fill="#2AB5A3"/>
+  <rect x="28" y="4"  width="12" height="11" rx="2" fill="#2AB5A3"/>
+  <rect x="44" y="4"  width="12" height="11" rx="2" fill="#F5A623"/>
+  <rect x="28" y="19" width="12" height="11" rx="2" fill="#2AB5A3"/>
+  <rect x="44" y="19" width="12" height="11" rx="2" fill="#2AB5A3"/>
+</svg>"""
+
 @st.cache_data
 def load_logo(path: str) -> str:
-    """Devuelve HTML del logo: imagen real si existe, SVG si no."""
+    """Devuelve HTML del logo: imagen real si existe, SVG aproximado si no."""
     try:
-        if os.path.exists(path):
-            with open(path, "rb") as f:
+        logo_path = Path(path)
+        if logo_path.exists() and logo_path.stat().st_size > 0:
+            with open(logo_path, "rb") as f:
                 b64 = base64.b64encode(f.read()).decode()
             return f'<img src="data:image/png;base64,{b64}" style="height:60px;width:auto;" alt="Logo Lidato">'
     except Exception:
-        pass  # Si falla la lectura, cae al SVG
+        pass
+    return _SVG_LOGO
 
-    # SVG aproximado del logo Lidato (L teal + cuadros + naranja)
-    return """<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4"  y="4"  width="16" height="42" rx="3" fill="#2AB5A3"/>
-      <rect x="4"  y="38" width="40" height="16" rx="3" fill="#2AB5A3"/>
-      <rect x="28" y="4"  width="12" height="11" rx="2" fill="#2AB5A3"/>
-      <rect x="44" y="4"  width="12" height="11" rx="2" fill="#F5A623"/>
-      <rect x="28" y="19" width="12" height="11" rx="2" fill="#2AB5A3"/>
-      <rect x="44" y="19" width="12" height="11" rx="2" fill="#2AB5A3"/>
-    </svg>"""
-
-logo_html = load_logo(os.path.join(os.path.dirname(__file__), "assets", "logo.png"))
+logo_html = load_logo(str(BASE_DIR / "assets" / "logo.png"))
 
 
 # ═══════════════════════════════════════════════════════════════
