@@ -47,9 +47,32 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .stAppViewContainer { background: var(--bg) !important; }
 header[data-testid="stHeader"] { background: transparent !important; }
 footer { display: none !important; }
-div[data-testid="column"] { padding: 0 5px !important; }
-section[data-testid="stSidebar"] { background: var(--white) !important; }
 .block-container { padding-top: 0 !important; }
+section[data-testid="stSidebar"] { background: var(--white) !important; }
+
+/* ── Columnas igual altura (la clave del fix) ── */
+div[data-testid="column"] {
+  padding: 0 5px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+div[data-testid="column"] > div[data-testid="stVerticalBlock"] {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  height: 100% !important;
+}
+/* Hace que los elementos dentro de la columna ocupen todo el alto */
+div[data-testid="column"] > div[data-testid="stVerticalBlock"] > div.element-container {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+div[data-testid="column"] > div[data-testid="stVerticalBlock"] > div.element-container > div {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
 
 /* ─── HEADER ─── */
 .ldt-header {
@@ -104,8 +127,21 @@ section[data-testid="stSidebar"] { background: var(--white) !important; }
   padding: 16px 14px 14px 14px;
   box-shadow: 0 2px 14px rgba(0,0,0,0.07);
   border: 1px solid var(--border); border-top: 3px solid var(--teal);
-  height: 100%;
+  flex: 1;
+  width: 100%;
+  min-height: 270px;
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
 }
+/* Centra el contenido verticalmente en las 3 tarjetas HTML */
+.kpi-body-center {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 8px 0;
+}
+/* La tarjeta con gauge no necesita centering manual */
+.kpi-gauge-card { min-height: 270px; }
 .kpi-title {
   font-family: 'Nunito', sans-serif; font-weight: 800;
   font-size: 10.5px; color: var(--txt-md);
@@ -147,7 +183,11 @@ section[data-testid="stSidebar"] { background: var(--white) !important; }
   background: var(--white); border-radius: 14px;
   padding: 16px 14px 12px 14px;
   box-shadow: 0 2px 14px rgba(0,0,0,0.07);
-  border: 1px solid var(--border); height: 100%;
+  border: 1px solid var(--border);
+  flex: 1;
+  width: 100%;
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
 }
 .sec-title {
   font-family: 'Nunito', sans-serif; font-weight: 800;
@@ -423,54 +463,56 @@ st.markdown(f"""
 
 # ═══════════════════════════════════════════════════════════════
 #  ROW 1 — 4 KPI CARDS
+#  Card 1 tiene gauge de Plotly; el resto son HTML puro.
+#  Usamos un wrapper con altura fija para igualar todas.
 # ═══════════════════════════════════════════════════════════════
 c1, c2, c3, c4 = st.columns(4, gap="small")
 
 with c1:
-    st.markdown('<div class="kpi-card">', unsafe_allow_html=True)
+    st.markdown('<div class="kpi-card kpi-gauge-card">', unsafe_allow_html=True)
     st.markdown('<div class="kpi-title">Estabilidad de Implementación</div>', unsafe_allow_html=True)
     st.plotly_chart(build_gauge(KP["estabilidad"]["valor"]),
                     use_container_width=True, config={"displayModeBar":False})
-    st.markdown(f"""<div style="text-align:center;margin-top:-10px;">
+    st.markdown(f'''<div style="text-align:center;margin-top:-10px;padding-bottom:6px;">
       <span class="status-dot"></span>
       <span style="font-size:11px;font-weight:700;color:#F5A623;">Status</span><br>
       <span class="kpi-sub">{s(KP["estabilidad"]["label"])}</span>
-    </div>""", unsafe_allow_html=True)
+    </div>''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with c2:
     v = KP["progreso"]["valor"]
-    st.markdown(f"""<div class="kpi-card">
+    st.markdown(f'''<div class="kpi-card">
       <div class="kpi-title">Progreso de Implementación Actual</div>
-      <div style="text-align:center;padding:14px 0 6px;">
+      <div class="kpi-body-center">
         <div class="kpi-num-orange" style="font-size:52px;">{v}%</div>
         <div class="prog-wrap"><div class="prog-fill" style="width:{v}%;"></div></div>
         <div class="kpi-sub">{s(KP["progreso"]["proyecto"])}</div>
       </div>
-    </div>""", unsafe_allow_html=True)
+    </div>''', unsafe_allow_html=True)
 
 with c3:
-    st.markdown(f"""<div class="kpi-card">
+    st.markdown(f'''<div class="kpi-card">
       <div class="kpi-title">Puntualidad de Informes (OTD)</div>
-      <div style="text-align:center;padding:10px 0 6px;">
+      <div class="kpi-body-center">
         <div class="otd-circle">
           <span style="font-size:26px;color:white;font-weight:900;line-height:1;">✓</span>
         </div>
         <div class="kpi-num-orange" style="font-size:48px;">{KP["otd"]["valor"]}%</div>
         <div class="kpi-sub">{s(KP["otd"]["label"])}</div>
       </div>
-    </div>""", unsafe_allow_html=True)
+    </div>''', unsafe_allow_html=True)
 
 with c4:
     n = str(KP["ajustes_tecnicos"]["valor"]).zfill(2)
-    st.markdown(f"""<div class="kpi-card">
+    st.markdown(f'''<div class="kpi-card">
       <div class="kpi-title">Ajustes Técnicos Activos</div>
-      <div style="text-align:center;padding:12px 0 6px;">
+      <div class="kpi-body-center">
         <div class="kpi-num-dark" style="font-size:62px;">{n}</div>
-        <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;color:#4A5568;margin-top:4px;">Solicitudes</div>
+        <div style="font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;color:#4A5568;margin-top:6px;">Solicitudes</div>
         <div class="kpi-sub">{s(KP["ajustes_tecnicos"]["label"])}</div>
       </div>
-    </div>""", unsafe_allow_html=True)
+    </div>''', unsafe_allow_html=True)
 
 
 # ═══════════════════════════════════════════════════════════════
